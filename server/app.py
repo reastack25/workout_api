@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, make_response
 from flask_migrate import Migrate
-from models import db, Exercise, Workout, WorkoutExercise
-from schemas import (
+from .models import db, Exercise, Workout, WorkoutExercise
+from .schemas import (
     ExerciseSchema, WorkoutSchema, WorkoutExerciseSchema,
     WorkoutWithExercisesSchema, ExerciseWithWorkoutsSchema,
     validate_workout_exercise
