@@ -77,29 +77,16 @@ class WorkoutExercise(db.Model):
     workout = db.relationship('Workout', back_populates='workout_exercises')
     exercise = db.relationship('Exercise', back_populates='workout_exercises')
     
-    # Table constraints
+    # Table constraints (non‑negative values)
     __table_args__ = (
         CheckConstraint('reps >= 0', name='check_reps_non_negative'),
         CheckConstraint('sets >= 0', name='check_sets_non_negative'),
         CheckConstraint('duration_seconds >= 0', name='check_duration_seconds_non_negative'),
     )
     
+    # Model validation – only one validator per attribute
     @validates('reps', 'sets', 'duration_seconds')
     def validate_non_negative(self, key, value):
         if value is not None and value < 0:
             raise ValueError(f"{key} must be non-negative")
         return value
-    
-    @validates('reps', 'sets', 'duration_seconds')
-    def validate_at_least_one_positive(self, key, value):
-        # This runs after each field is set; we need to check all three together.
-        return value
-    
-    # Model-level validation that at least one of reps, sets, duration_seconds is >0
-    @validates('workout_id')  # after all fields are set, we can validate in one place
-    def validate_has_metric(self, key, workout_id):
-        # Only run when all three fields are present 
-        if hasattr(self, 'reps') and hasattr(self, 'sets') and hasattr(self, 'duration_seconds'):
-            if (self.reps is None or self.reps == 0) and (self.sets is None or self.sets == 0) and (self.duration_seconds is None or self.duration_seconds == 0):
-                raise ValueError("At least one of reps, sets, or duration_seconds must be > 0")
-        return workout_id

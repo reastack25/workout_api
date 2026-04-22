@@ -5,7 +5,7 @@ class ExerciseSchema(Schema):
     id = fields.Int(dump_only=True)
     name = fields.Str(required=True, validate=validate.Length(min=1, max=100))
     category = fields.Str(required=True, validate=validate.OneOf(['Strength', 'Cardio', 'Flexibility', 'Balance', 'Other']))
-    equipment_needed = fields.Bool(required=False, missing=False)
+    equipment_needed = fields.Bool(load_default=False, dump_default=False)  # fixed
     
     @validates('name')
     def validate_name_not_empty(self, value):
@@ -23,7 +23,6 @@ class WorkoutSchema(Schema):
         if value > date.today():
             raise ValidationError("Workout date cannot be in the future")
 
-
 class WorkoutExerciseSchema(Schema):
     id = fields.Int(dump_only=True)
     workout_id = fields.Int(required=True)
@@ -31,11 +30,6 @@ class WorkoutExerciseSchema(Schema):
     reps = fields.Int(allow_none=True, validate=validate.Range(min=0))
     sets = fields.Int(allow_none=True, validate=validate.Range(min=0))
     duration_seconds = fields.Int(allow_none=True, validate=validate.Range(min=0))
-    
-    @validates('reps', 'sets', 'duration_seconds')
-    def validate_at_least_one(self, data, **kwargs):
-        # For deserialization, we need to check the whole object
-        pass
     
     @validates('reps')
     def validate_reps_none_or_positive(self, value):
@@ -51,22 +45,14 @@ class WorkoutExerciseSchema(Schema):
     def validate_duration_none_or_positive(self, value):
         if value is not None and value < 0:
             raise ValidationError("Duration seconds cannot be negative")
-    
-    # Cross-field validation: at least one metric provided and >0
-    @validates('workout_id')
-    def validate_has_metric(self, value, **kwargs):
-        pass
-
-# For POST requests to create a WorkoutExercise 
-def validate_workout_exercise(data):
-    reps = data.get('reps')
-    sets = data.get('sets')
-    duration = data.get('duration_seconds')
-    if (reps is None or reps == 0) and (sets is None or sets == 0) and (duration is None or duration == 0):
-        raise ValidationError("At least one of reps, sets, or duration_seconds must be greater than 0")
-    return data
 
 # For detailed GET responses
+class ExerciseBasicSchema(ExerciseSchema):
+    pass
+
+class WorkoutBasicSchema(WorkoutSchema):
+    pass
+
 class WorkoutExerciseWithExerciseSchema(Schema):
     id = fields.Int()
     reps = fields.Int()
@@ -86,3 +72,12 @@ class WorkoutExerciseWithWorkoutSchema(Schema):
 
 class ExerciseWithWorkoutsSchema(ExerciseSchema):
     workout_exercises = fields.Nested(WorkoutExerciseWithWorkoutSchema, many=True)
+
+# Cross-field validation helper for WorkoutExercise
+def validate_workout_exercise(data):
+    reps = data.get('reps')
+    sets = data.get('sets')
+    duration = data.get('duration_seconds')
+    if (reps is None or reps == 0) and (sets is None or sets == 0) and (duration is None or duration == 0):
+        raise ValidationError("At least one of reps, sets, or duration_seconds must be greater than 0")
+    return data

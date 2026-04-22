@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-from app import app
-from models import db, Exercise, Workout, WorkoutExercise
+from .app import app
+from .models import db, Exercise, Workout, WorkoutExercise
 from datetime import date, timedelta
 
 with app.app_context():
